@@ -51,15 +51,25 @@ func walk_one(pth string, cb FastWalkCallback) {
 
 }
 
-func write_inline(wr io.Writer, fname string) {
-	f, _ := os.Open(fname)
+func write_inline(wr io.Writer, fname string, lines int) {
+	f, err := os.Open(fname)
+	if err != nil {
+		panic(err)
+	}
 
+	fmt.Printf("inline %s\n", fname)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		l := scanner.Bytes()
+		//fmt.Printf("scan %v\n", l)
+
 		wr.Write([]byte{32})
 		wr.Write(l)
 		wr.Write([]byte{'\n'})
+		if lines--; lines < 1 {
+			wr.Write([]byte("# file too long") )
+			return
+		}
 
 		//fmt.Println(l)
 
@@ -106,7 +116,8 @@ func create_index_cmd(cmd *commander.Command, args []string) error {
 		for _, fi := range fis {
 			name := fi.Name()
 			if !fi.IsDir() {
-				_, err := wr.WriteString(pth + "/" + name + "\n")
+				fullname := pth + "/" + name
+				_, err := wr.WriteString( fullname + "\n")
 				if err != nil {
 					panic(err)
 				}
@@ -117,7 +128,7 @@ func create_index_cmd(cmd *commander.Command, args []string) error {
 					if m {
 						fmt.Printf("Match %s %v\n", name, m)
 
-						write_inline(wr, name)
+						write_inline(wr, fullname, 50)
 					}
 				}
 
